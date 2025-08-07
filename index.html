@@ -63,20 +63,38 @@
         </div>
     </div>
 
-  <script>
+ <script>
   const weekdays = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"];
-  let scheduleData = {};
+  let rawData = [];
+  let structuredSchedule = {};
 
   async function loadSchedule() {
-    const response = await fetch("schedule.json");
-    scheduleData = await response.json();
+    const response = await fetch("api/fruitask.php");
+    const data = await response.json();
+    rawData = data.result || [];
+    structureScheduleData();
     renderAllTables();
+  }
+
+  function structureScheduleData() {
+    structuredSchedule = {};
+    rawData.forEach(item => {
+      const room = item.Room;
+      const day = item.Day;
+      const start = item.Start;
+      const end = item.End;
+      const className = item.Class;
+      const teacher = item.Teacher;
+
+      if (!structuredSchedule[room]) structuredSchedule[room] = {};
+      if (!structuredSchedule[room][day]) structuredSchedule[room][day] = [];
+      structuredSchedule[room][day].push({ start, end, class: className, Teacher: teacher });
+    });
   }
 
   function toggleForm() {
     const form = document.getElementById("bookingForm");
     const schedule = document.getElementById("schedule-container");
-
     const isHidden = form.classList.contains("hidden");
 
     if (isHidden) {
@@ -143,17 +161,9 @@
   function renderAllTables() {
     const container = document.getElementById("schedule-container");
     container.innerHTML = "";
-    for (const location in scheduleData) {
-      container.innerHTML += buildTable(location, scheduleData[location]);
+    for (const location in structuredSchedule) {
+      container.innerHTML += buildTable(location, structuredSchedule[location]);
     }
-  }
-
-  async function saveSchedule() {
-    await fetch("save_schedule.php", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(scheduleData)
-    });
   }
 
   async function submitBooking() {
@@ -166,33 +176,46 @@
     const [start, end] = time.split(" - ");
     const upperDay = day.toUpperCase();
 
-    if (!scheduleData[room][upperDay]) scheduleData[room][upperDay] = [];
-    if (!classname || !teacher || !time || !room || !day) {
-        alert("Please fill the necessary fields.");
+    if (!room || !upperDay || !start || !end || !classname || !teacher) {
+      alert("Please fill all fields.");
       return;
-}
-    const isOccupied = scheduleData[room][upperDay].some(entry =>
-      entry.start === start && entry.end === end
-    );
+    }
 
+    const roomSchedule = structuredSchedule[room]?.[upperDay] || [];
+    const isOccupied = roomSchedule.some(entry => entry.start === start && entry.end === end);
     if (isOccupied) {
       alert("Schedule Written is Already Occupied, please try a new one");
       return;
     }
 
+    const newEntry = {
+      Room: room,
+      Day: upperDay,
+      Start: start,
+      End: end,
+      Class: classname,
+      Teacher: teacher
+    };
 
-    scheduleData[room][upperDay].push({ start, end, class: classname, Teacher: teacher });
-    scheduleData[room][upperDay].sort((a, b) => new Date(`1970/01/01 ${a.start}`) - new Date(`1970/01/01 ${b.start}`));
+    const response = await fetch("api/fruitask.php", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newEntry)
+    });
 
-    await saveSchedule();
-    renderAllTables();
-    toggleForm();
+    if (response.ok) {
+      rawData.push(newEntry);
+      structureScheduleData();
+      renderAllTables();
+      toggleForm();
+    } else {
+      console.log(response);
+    }
   }
 
-  // Run when page loads
+  // Load on page
   loadSchedule();
 </script>
-
 
 </body>
 

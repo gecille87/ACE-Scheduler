@@ -21,11 +21,7 @@ if ($method === 'GET') {
     // Add booking to Fruitask
     $input = json_decode(file_get_contents('php://input'), true);
 
-    if (!isset($input['Name'], $input['Info'], $input['Status'])) {
-        http_response_code(400);
-        echo json_encode(['error' => 'Invalid input']);
-        exit;
-    }
+
 
     $options = [
         'http' => [
