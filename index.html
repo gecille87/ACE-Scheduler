@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>ACE Hub Schedule</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100 font-sans">
+
+    <header class="bg-blue-900 text-white px-6 py-4 flex justify-between items-center">
+        <h1 class="text-2xl font-semibold">ACE Hub Weekly Schedule</h1>
+        <button onclick="toggleForm()" class="text-2xl">☰</button>
+    </header>
+
+    <div class="flex">
+        <!-- Schedule Section -->
+        <div class="w-full p-6" id="schedule-container"></div>
+
+        <!-- Booking Form -->
+        <div id="bookingForm" class="w-1/4 bg-white p-6 shadow-lg border-l hidden flex-col gap-4">
+            <h2 class="text-xl font-bold mb-4">Book a Schedule</h2>
+            <div class="mb-4">
+                <label class="block font-semibold mb-1" for="room">Room:</label>
+                <select id="room" class="w-full border px-3 py-2 rounded">
+          <option>ACE Hub1 - Rm 309</option>
+          <option>ACE Hub2 - 4th Floor</option>
+        </select>
+            </div>
+            <div class="mb-4">
+                <label class="block font-semibold mb-1" for="day">Day:</label>
+                <select id="day" class="w-full border px-3 py-2 rounded">
+          <option>MONDAY</option>
+          <option>TUESDAY</option>
+          <option>WEDNESDAY</option>
+          <option>THURSDAY</option>
+          <option>FRIDAY</option>
+        </select>
+            </div>
+            <div class="mb-4">
+                <label class="block font-semibold mb-1" for="time">Time:</label>
+                <select id="time" class="w-full border px-3 py-2 rounded">
+          <option>7:40 AM - 8:30 AM</option>
+          <option>8:30 AM - 9:20 AM</option>
+          <option>9:40 AM - 10:30 AM</option>
+          <option>10:30 AM - 11:20 AM</option>
+          <option>12:20 PM - 1:10 PM</option>
+          <option>1:10 PM - 2:00 PM</option>
+          <option>2:10 PM - 3:00 PM</option>
+          <option>3:00 PM - 3:50 PM</option>
+        </select>
+            </div>
+            <div class="mb-4">
+                <label class="block font-semibold mb-1" for="classname">Class Name:</label>
+                <input type="text" id="classname" placeholder="e.g. Grade 10 - St. Agnes(430)" class="w-full border px-3 py-2 rounded" />
+            </div>
+            <div class="mb-4">
+                <label class="block font-semibold mb-1" for="teacher">Teacher Name:</label>
+                <input type="text" id="teacher" placeholder="e.g. Juan dela Cruz" class="w-full border px-3 py-2 rounded" />
+            </div>
+            <button onclick="submitBooking()" class="w-full bg-blue-700 text-white py-2 rounded hover:bg-blue-800">Submit</button>
+        </div>
+    </div>
+
+  <script>
+  const weekdays = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"];
+  let scheduleData = {};
+
+  async function loadSchedule() {
+    const response = await fetch("schedule.json");
+    scheduleData = await response.json();
+    renderAllTables();
+  }
+
+  function toggleForm() {
+    const form = document.getElementById("bookingForm");
+    const schedule = document.getElementById("schedule-container");
+
+    const isHidden = form.classList.contains("hidden");
+
+    if (isHidden) {
+      form.classList.remove("hidden");
+      schedule.classList.remove("w-full");
+      schedule.classList.add("w-3/4");
+    } else {
+      form.classList.add("hidden");
+      schedule.classList.remove("w-3/4");
+      schedule.classList.add("w-full");
+    }
+  }
+
+  function getAllTimeSlots(locationData) {
+    const timeSet = new Set();
+    for (const day of weekdays) {
+      locationData[day]?.forEach(entry => {
+        timeSet.add(`${entry.start}|${entry.end}`);
+      });
+    }
+    return Array.from(timeSet).sort((a, b) => {
+      const [startA] = a.split("|");
+      const [startB] = b.split("|");
+      return new Date(`1970/01/01 ${startA}`) - new Date(`1970/01/01 ${startB}`);
+    });
+  }
+
+  function getTeacherColor(teacher) {
+    if (teacher === "Ms. Gecille") return "bg-pink-100";
+    if (teacher === "Ms. Juamae") return "bg-blue-100";
+    return "bg-green-100";
+  }
+
+  function buildTable(locationName, locationData) {
+    const timeSlots = getAllTimeSlots(locationData);
+    let html = `<h2 class='text-xl font-bold mb-2'>${locationName}</h2>
+      <table class='table-auto w-full mb-8 border border-gray-300 bg-white shadow'>
+      <thead><tr class='bg-gray-100'>
+      <th class='border px-4 py-2'>Start</th>
+      <th class='border px-4 py-2'>End</th>`;
+
+    weekdays.forEach(day => html += `<th class='border px-4 py-2'>${day}</th>`);
+    html += `</tr></thead><tbody>`;
+
+    timeSlots.forEach(slot => {
+      const [start, end] = slot.split("|");
+      html += `<tr><td class='border px-4 py-2 font-semibold'>${start}</td><td class='border px-4 py-2'>${end}</td>`;
+      weekdays.forEach(day => {
+        const entry = locationData[day]?.find(e => e.start === start && e.end === end);
+        if (entry) {
+          const color = getTeacherColor(entry.Teacher);
+          html += `<td class='border px-4 py-2 ${color}'>${entry.class}<br><span class='text-xs italic text-gray-700'>${entry.Teacher}</span></td>`;
+        } else {
+          html += `<td class='border px-4 py-2'></td>`;
+        }
+      });
+      html += `</tr>`;
+    });
+
+    html += `</tbody></table>`;
+    return html;
+  }
+
+  function renderAllTables() {
+    const container = document.getElementById("schedule-container");
+    container.innerHTML = "";
+    for (const location in scheduleData) {
+      container.innerHTML += buildTable(location, scheduleData[location]);
+    }
+  }
+
+  async function saveSchedule() {
+    await fetch("save_schedule.php", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(scheduleData)
+    });
+  }
+
+  async function submitBooking() {
+    const room = document.getElementById("room").value;
+    const day = document.getElementById("day").value;
+    const time = document.getElementById("time").value;
+    const classname = document.getElementById("classname").value;
+    const teacher = document.getElementById("teacher").value;
+
+    const [start, end] = time.split(" - ");
+    const upperDay = day.toUpperCase();
+
+    if (!scheduleData[room][upperDay]) scheduleData[room][upperDay] = [];
+    if (!classname || !teacher || !time || !room || !day) {
+        alert("Please fill the necessary fields.");
+      return;
+}
+    const isOccupied = scheduleData[room][upperDay].some(entry =>
+      entry.start === start && entry.end === end
+    );
+
+    if (isOccupied) {
+      alert("Schedule Written is Already Occupied, please try a new one");
+      return;
+    }
+
+
+    scheduleData[room][upperDay].push({ start, end, class: classname, Teacher: teacher });
+    scheduleData[room][upperDay].sort((a, b) => new Date(`1970/01/01 ${a.start}`) - new Date(`1970/01/01 ${b.start}`));
+
+    await saveSchedule();
+    renderAllTables();
+    toggleForm();
+  }
+
+  // Run when page loads
+  loadSchedule();
+</script>
+
+
+</body>
+
+</html>
