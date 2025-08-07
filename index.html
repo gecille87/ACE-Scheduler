@@ -69,7 +69,7 @@
   let structuredSchedule = {};
 
   async function loadSchedule() {
-    const response = await fetch("api/fruitask.php");
+    const response = await fetch("fruitask.php");
     const data = await response.json();
     rawData = data.result || [];
     structureScheduleData();
@@ -197,7 +197,7 @@
       Teacher: teacher
     };
 
-    const response = await fetch("api/fruitask.php", {
+    const response = await fetch("fruitask.php", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(newEntry)
