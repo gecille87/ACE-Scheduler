@@ -4,8 +4,8 @@
 header('Content-Type: application/json');
 
 // Your secure token and API key
-$token = 'wP6ho2kWnTAZCtL';
-$apiKey = 'b7aa05fb92b1158a7fba70bd17bcb194';
+$token = 'PROJECT TOKEN';
+$apiKey = 'API KEY';
 
 $fruitaskUrl = "https://api.fruitask.com/v3/tables/$token/rows/?api_key=$apiKey";
 
