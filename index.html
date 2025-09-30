@@ -5,14 +5,26 @@
     <meta charset="UTF-8">
     <title>ACE Hub Schedule</title>
     <script src="https://cdn.tailwindcss.com"></script>
+     <link rel="icon" href="assets/ace.png" type="image/png">
+
 </head>
 
 <body class="bg-gray-100 font-sans">
 
-    <header class="bg-blue-900 text-white px-6 py-4 flex justify-between items-center">
-        <h1 class="text-2xl font-semibold">ACE Hub Weekly Schedule</h1>
-        <button onclick="toggleForm()" class="text-2xl">☰</button>
-    </header>
+<header class="bg-blue-800 text-white px-6 py-6 flex justify-between items-center">
+  <div class="flex items-center gap-4">
+    <img src="assets/ace.png" alt="ACE Logo" class="h-10 w-10 object-contain">
+    <img src="assets/usjr.png" alt="USJR Logo" class="h-10 w-10 object-contain">
+    <h1 class="text-2xl font-semibold">
+      ACE Hub Weekly Schedule – University of San Jose Recoletos Basak (JHS Department)
+    </h1>
+  </div>
+<button onclick="toggleForm()" 
+  class="text-2xl bg-white text-blue-800 font-bold px-4 py-2 rounded shadow hover:bg-blue-100 transition">
+  ☰
+</button>
+
+</header>
 
     <div class="flex">
         <!-- Schedule Section -->
@@ -69,7 +81,7 @@
   let structuredSchedule = {};
 
   async function loadSchedule() {
-    const response = await fetch("fruitask.php");
+    const response = await fetch("api/fruitask.php");
     const data = await response.json();
     rawData = data.result || [];
     structureScheduleData();
@@ -108,7 +120,7 @@
     }
   }
 
-  function getAllTimeSlots(locationData) {
+  function getAllTimeSlots2(locationData) {
     const timeSet = new Set();
     for (const day of weekdays) {
       locationData[day]?.forEach(entry => {
@@ -122,6 +134,19 @@
     });
   }
 
+function getAllTimeSlots() {
+  return [
+    "7:40 AM|8:30 AM",
+    "8:30 AM|9:20 AM",
+    "9:40 AM|10:30 AM",
+    "10:30 AM|11:20 AM",
+    "12:20 PM|1:10 PM",
+    "1:10 PM|2:00 PM",
+    "2:10 PM|3:00 PM",
+    "3:00 PM|3:50 PM"
+  ];
+}
+
   function getTeacherColor(teacher) {
     if (teacher === "Ms. Gecille") return "bg-pink-100";
     if (teacher === "Ms. Juamae") return "bg-blue-100";
@@ -130,6 +155,7 @@
 
   function buildTable(locationName, locationData) {
     const timeSlots = getAllTimeSlots(locationData);
+    console.log(timeSlots);
     let html = `<h2 class='text-xl font-bold mb-2'>${locationName}</h2>
       <table class='table-auto w-full mb-8 border border-gray-300 bg-white shadow'>
       <thead><tr class='bg-gray-100'>
@@ -197,7 +223,7 @@
       Teacher: teacher
     };
 
-    const response = await fetch("fruitask.php", {
+    const response = await fetch("api/fruitask.php", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(newEntry)
